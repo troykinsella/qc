@@ -1,6 +1,8 @@
 # `qc`
-
 > "queue cat"
+---
+[![License](https://img.shields.io/github/license/troykinsella/qc.svg)](https://github.com/troykinsella/qc/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/troykinsella/qc.svg?branch=master)](https://travis-ci.org/troykinsella/qc)
 
 A command line utility for publishing and subscribing to 
 AMQP 0.9.1 message queues, like RabbitMQ.
