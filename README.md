@@ -3,7 +3,7 @@
 > "queue cat"
 
 A command line utility for publishing and subscribing to 
-amq0.9.1 message queues, like RabbitMQ.
+AMQP 0.9.1 message queues, like RabbitMQ.
 
 Note: This application is in alpha status until a `1.0.0` release.
 
