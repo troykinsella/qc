@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/urfave/cli"
 	"os"
@@ -10,17 +9,22 @@ import (
 const (
 	AppName = "qc"
 
-	optConsume     = "c"
-	optConsumeLong = optConsume + ", consume"
-	optContentType = "content-type"
-	optDurable     = "d"
-	optDurableLong = optDurable + ", durable"
-	optExType      = "t"
-	optExTypeLong  = optExType + ", exchange-type"
-	optUrl         = "u"
-	optUrlLong     = optUrl + ", url"
+	optConsume        = "c"
+	optConsumeLong    = optConsume + ", consume"
+	optContentType    = "content-type"
+	optDurable        = "d"
+	optDurableLong    = optDurable + ", durable"
+	optExchange       = "e"
+	optExchangeLong   = optExchange + ", exchange"
+	optExType         = "t"
+	optExTypeLong     = optExType + ", exchange-type"
+	optRoutingKey     = "r"
+	optRoutingKeyLong = optRoutingKey + ", routing-key"
+	optUrl            = "u"
+	optUrlLong        = optUrl + ", broker-url"
 
 	optDefaultContentType = "plain/text"
+	optDefaultExchange    = ""
 	optDefaultExType      = "direct"
 	optDefaultUrl         = "amqp://guest:guest@localhost:5672/"
 )
@@ -44,10 +48,14 @@ func newQC(c *cli.Context) (*QC, error) {
 		return nil, err
 	}
 
+	exchange := c.String(optExchange)
+
 	exType, err := requireString(c, optExType)
 	if err != nil {
 		return nil, err
 	}
+
+	routingKeys := c.StringSlice(optRoutingKey)
 
 	consume := c.Bool(optConsume)
 
@@ -61,17 +69,9 @@ func newQC(c *cli.Context) (*QC, error) {
 
 	durable := c.Bool(optDurable)
 
-	args := c.Args()
-	if len(args) < 2 {
-		return nil, errors.New("must supply arguments: exchange and at least one routing key")
-	}
-
-	exName := args[0]
-	routingKeys := args[1:]
-
 	qc := New(
 		url,
-		exName,
+		exchange,
 		exType,
 		routingKeys,
 		consume,
@@ -87,7 +87,7 @@ func newCliApp() *cli.App {
 	app.Name = AppName
 	app.Version = AppVersion
 	app.Usage = "\"queue cat\" - publish and subscribe to AMQP 0.9.1 message queues, like RabbitMQ"
-	app.UsageText = AppName + " [options] exchange routing-key [routing-key...]"
+	app.UsageText = AppName + " [options]"
 	app.Author = "Troy Kinsella (troy.kinsella@startmail.com)"
 	app.Action = func(c *cli.Context) error {
 		qc, err := newQC(c)
@@ -116,12 +116,21 @@ func newCliApp() *cli.App {
 		},
 		cli.BoolFlag{
 			Name:  optDurableLong,
-			Usage: "if declaring an exchange and/or a queue, make it durable",
+			Usage: "declare exchanges and queues as durable",
+		},
+		cli.StringFlag{
+			Name:  optExchangeLong,
+			Value: optDefaultExchange,
+			Usage: "the name of the `EXCHANGE`",
 		},
 		cli.StringFlag{
 			Name:  optExTypeLong,
 			Value: optDefaultExType,
-			Usage: "exchange `TYPE` [direct, fanout, topic]",
+			Usage: "exchange `TYPE` [direct, fanout, headers, topic]",
+		},
+		cli.StringSliceFlag{
+			Name:  optRoutingKeyLong,
+			Usage: "bind consumer to, or publish to `ROUTING_KEY`",
 		},
 		cli.StringFlag{
 			Name:  optUrlLong,

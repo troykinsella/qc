@@ -21,41 +21,160 @@ By default, `qc` connects to a message queue broker at
 `amqp://guest:guest@localhost:5672/`. Pass `-u` with 
 an alternate URL to change the broker to which `qc` connects.
 
+Supply an exchange name with the `-e` option.
+Supply one or more routing keys with the `-r` option.
+Pass `-t` with value `direct` (default), `fanout`, `headers`, or `topic` 
+to control the exchange type.
+
 `qc` can be executed in producer or consumer mode.
 
-### Consumers
+### Consumer Mode
 
 Consume messages by passing the `-c` option, 
-an exchange name, and some routing keys on which to bind:
+an exchange name (`-e`), and some routing keys (`-r`) 
+on which to bind.
 
 ```bash
-qc -c logs info warning error
+qc -c -e logs -r info -r error
 ```
 
 This declares an exchange named `logs` of the default
-type `direct`. You can pass `-t` with value `direct`, 
-`fanout`, or `topic` to control the exchange type. It creates 
-an exclusive queue having a generated name, and binds it to 
-the exchange for each routing key supplied 
-(`info`, `warning`, and `error`). Lastly, it consumes
-messages from the queue, writing them to `stdout`, until the
-process is killed.
+type `direct`. It creates an exclusive queue having a 
+generated name, and binds that queue to the exchange for 
+each routing key supplied (`info`, and `error`), or once
+with an empty routing key if none is supplied. Lastly, 
+it consumes messages from the queue, writing them to `stdout`, 
+until the process is killed.
 
-### Producers
+### Producer Mode
 
-Produce messages by passing input to `qc` through `stdin`,
-supplying the exchange name and a routing key:
+Producer mode is the default, active when `-c` is omitted.
+
+Publish messages by passing input to `qc` through `stdin`,
+supplying the exchange name (`-e`) and a routing key (`-r`).
 
 ```bash
-echo "oh no!" | qc logs error
+echo "oh no!" | qc -e logs -r error
 ```
 
-This declares an exchange named `logs`, and publishes the
-given message to it.
+This declares an exchange named `logs` of the default
+type `direct`, and publishes the given message to it.
 
-## Roadmap
+## Examples
 
-* More control over exchange and queue options
+### Direct Exchange
+
+Create separate consumers that are interested only in specific
+log levels on exchange `logs`. As `direct` is the default 
+exchange type, we can omit the `-t` option.
+
+```bash
+# error handler
+$ qc -c -e logs -r error
+```
+
+```bash
+# info handler
+$ qc -c -e logs -r info
+```
+
+Now log some messages.
+
+```bash
+# logger A
+$ echo "your bike was stolen!" | qc -e logs -r error
+$ echo "your mother-in-law was kidnapped" | qc -e logs -r info
+```
+
+Consumers receive only the relevant messages.
+
+```bash
+# error handler
+$ qc -c -e logs -r error
+your bike was stolen!
+```
+
+```bash
+# info handler
+$ qc -c -e logs -r info
+your mother-in-law was kidnapped
+```
+
+### Pub-Sub / Fan-Out
+
+Create some consumers to receive log messages on exchange `logs`.
+Routing keys are not needed for `fanout`.
+
+```bash
+# consumer A
+$ qc -c -t fanout -e logs
+```
+
+```bash
+# consumer B
+$ qc -c -t fanout -e logs
+```
+
+Publish log messages.
+
+```bash
+# producer A
+$ echo "Houston, there's cake" | qc -t fanout -e logs
+```
+
+Both consumers receive the message.
+
+```bash
+# consumer A
+$ qc -c -t fanout -e logs
+Houston, there's cake
+```
+
+```bash
+# consumer B
+$ qc -c -t fanout -e logs
+Houston, there's cake
+```
+
+### Topics
+
+Create consumers that are interested in particular topics.
+
+```bash
+# any-colour rabbit consumer
+qc -c -t topic -e animals -r '*.rabbit'
+```
+
+```bash
+# blue animal consumer
+qc -c -t topic -e animals -r 'blue.*'
+```
+
+Publish some animal names.
+
+```bash
+# producer A
+echo "roger" | qc -t topic -e animals -r white.rabbit
+echo "dick"  | qc -t topic -e animals -r blue.whale
+echo "ted"   | qc -t topic -e animals -r blue.rabbit
+echo "jerry" | qc -t topic -e animals -r red.eagle
+```
+
+Consumers receive only the relevant messages.
+
+```bash
+# any-colour rabbit consumer
+qc -c -t topic -e animals -r '*.rabbit'
+roger
+ted
+```
+
+```bash
+# blue animal consumer
+qc -c -t topic -e animals -r 'blue.*'
+dick
+ted
+```
 
 ## License
 

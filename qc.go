@@ -8,13 +8,13 @@ import (
 )
 
 type QC struct {
-	url         string
-	exName      string
-	exType      string
-	routingKeys []string
-	consume     bool
-	contentType string
-	durable     bool
+	url          string
+	exchange     string
+	exchangeType string
+	routingKeys  []string
+	consume      bool
+	contentType  string
+	durable      bool
 
 	conn *amqp.Connection
 	ch   *amqp.Channel
@@ -22,8 +22,8 @@ type QC struct {
 
 func New(
 	url,
-	exName,
-	exType string,
+	exchange,
+	exchangeType string,
 	routingKeys []string,
 	consume bool,
 	contentType string,
@@ -32,14 +32,11 @@ func New(
 	if url == "" {
 		panic(errors.New("url required"))
 	}
-	if exName == "" {
-		panic(errors.New("exName required"))
-	}
-	if exType == "" {
-		panic(errors.New("exType required"))
+	if exchangeType == "" {
+		panic(errors.New("exchangeType required"))
 	}
 	if len(routingKeys) == 0 {
-		panic(errors.New("routingKeys required"))
+		routingKeys = []string{""}
 	}
 	if !consume {
 		if contentType == "" {
@@ -48,13 +45,13 @@ func New(
 	}
 
 	return &QC{
-		url:         url,
-		exName:      exName,
-		exType:      exType,
-		routingKeys: routingKeys,
-		consume:     consume,
-		contentType: contentType,
-		durable:     durable,
+		url:          url,
+		exchange:     exchange,
+		exchangeType: exchangeType,
+		routingKeys:  routingKeys,
+		consume:      consume,
+		contentType:  contentType,
+		durable:      durable,
 	}
 }
 
@@ -80,8 +77,8 @@ func (qc *QC) Connect() error {
 func (qc *QC) declareExchange() error {
 
 	err := qc.ch.ExchangeDeclare(
-		qc.exName,
-		qc.exType,
+		qc.exchange,
+		qc.exchangeType,
 		qc.durable, // durable
 		true,       // auto-deleted
 		false,      // internal
@@ -156,7 +153,7 @@ func (qc *QC) doPublish() error {
 
 	for _, routingKey := range qc.routingKeys {
 		err = qc.ch.Publish(
-			qc.exName, // exchange
+			qc.exchange, // exchange
 			routingKey,
 			false, // mandatory
 			false, // immediate
@@ -181,7 +178,7 @@ func (qc *QC) bindQueue(qName string) error {
 		err = qc.ch.QueueBind(
 			qName,
 			routingKey,
-			qc.exName,
+			qc.exchange,
 			false, // no-wait
 			nil,
 		)
