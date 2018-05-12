@@ -20,7 +20,8 @@ Put the binary in a convenient place, such as `/usr/local/bin/qc`.
 
 By default, `qc` connects to a message queue broker at
 `amqp://guest:guest@localhost:5672/`. Pass `-u` with 
-an alternate URL to change the broker to which `qc` connects.
+an alternate URL, or set the `QC_BROKER_URL` environment variable
+to change the broker to which `qc` connects.
 
 Supply an exchange name with the `-e` option.
 Supply one or more routing keys with the `-r` option.
