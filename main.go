@@ -27,6 +27,8 @@ const (
 	optDefaultExchange    = ""
 	optDefaultExType      = "direct"
 	optDefaultUrl         = "amqp://guest:guest@localhost:5672/"
+
+	optEnvUrl = "QC_BROKER_URL"
 )
 
 var (
@@ -133,9 +135,10 @@ func newCliApp() *cli.App {
 			Usage: "bind consumer to, or publish to `ROUTING_KEY`",
 		},
 		cli.StringFlag{
-			Name:  optUrlLong,
-			Value: optDefaultUrl,
-			Usage: "`URL` of the message queue broker",
+			Name:   optUrlLong,
+			Value:  optDefaultUrl,
+			EnvVar: optEnvUrl,
+			Usage:  "`URL` of the message queue broker",
 		},
 	}
 
